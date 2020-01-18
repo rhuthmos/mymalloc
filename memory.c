@@ -65,7 +65,15 @@ void add_to_list(long long int* ptr, long long int * block){
 	ptr = block;
 }
 
+
 long long int* pop_from_list(long long int* ptr){
+	if (ptr!=NULL){
+		long long int* metadata = ptr - ((long long int)ptr)/8;
+		*(metadata+1) = *(metadata+1) -1;
+		*((long long int*)*(ptr+1)) = NULL;
+		return ptr;
+	}
+
 
 }
 
