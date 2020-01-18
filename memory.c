@@ -51,8 +51,18 @@ void myfree(void *ptr)
 	abort();
 }
 
-void add_to_list(long long int* ptr, long long int * block){
+void cleanup(long long int * ptr, long long int* metaData){}
 
+void add_to_list(long long int* ptr, long long int * block){
+	*block = NULL;
+	*(block+1) = ptr;
+	*ptr = block;
+	long long int* metaData = ptr - ((long long int)ptr%4096)/8;
+	*(metaData+1) = *(metaData+1) + *(metaData);
+	if (*(metaData+1)>=4096){
+		cleanup(ptr, metaData);
+	}
+	ptr = block;
 }
 
 long long int* pop_from_list(long long int* ptr){
@@ -75,7 +85,7 @@ void *mymalloc(size_t size)
 			page ++;
 			while(page < endLimit ){
 				add_to_list(ptr, page);
-				page += (size/16);
+				page += (size/8);
 			}
 		}
 		return pop_from_list(ptr);
