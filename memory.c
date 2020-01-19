@@ -57,7 +57,22 @@ void myfree(void *ptr)
 	abort();
 }
 
-void cleanup(long long int * ptr, long long int* metaData){}
+void cleanup(long long int * ptr, long long int* metaData){
+	while (ptr != NULL && (ptr -((long long int )ptr % 4096) == metaData)){
+		pop_from_list(ptr);
+	}
+	long long int* next = *(ptr+1);
+	while(next!= NULL){
+		if (next - ((long long int)next %4096) == metaData){
+			*(ptr+1) = *(next+1);
+			*(long long int*)*(next+1) = ptr;
+		}
+		ptr = next;
+		next = *(next + 1);
+		//prev = next;
+	}
+	free_ram(metaData, 4096);
+}
 
 void add_to_list(long long int* ptr, long long int * block){
 	*block = NULL;
