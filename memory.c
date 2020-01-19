@@ -47,6 +47,12 @@ int getSize(int k){
 
 void myfree(void *ptr)
 {
+	long long int* page = (long long int*) ptr;
+	page = page - ((long long int) page %4096);
+	int size = *(page);
+	int sz = getSize(size);
+	long long int* list = free_list[sz];
+	add_to_list(list, (long long int*) ptr);
 	printf("myfree is not implemented\n");
 	abort();
 }
