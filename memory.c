@@ -50,9 +50,14 @@ void myfree(void *ptr)
 	long long int* page = (long long int*) ptr;
 	page = page - ((long long int) page %4096);
 	int size = *(page);
-	int sz = getSize(size);
-	long long int* list = free_list[sz];
-	add_to_list(list, (long long int*) ptr);
+	if (size<=4080){
+		int sz = getSize(size);
+		long long int* list = free_list[sz];
+		add_to_list(list, (long long int*) ptr);
+	}
+	else{
+		free_ram((void*) page, size);
+	}
 	printf("myfree is not implemented\n");
 	abort();
 }
@@ -87,12 +92,12 @@ void add_to_list(long long int* ptr, long long int * block){
 }
 
 
-long long int* pop_from_list(long long int* ptr){
+void* pop_from_list(long long int* ptr){
 	if (ptr!=NULL){
 		long long int* metadata = ptr - ((long long int)ptr)/8;
 		*(metadata+1) = *(metadata+1) -1;
 		*((long long int*)*(ptr+1)) = NULL;
-		return ptr;
+		return (void*)ptr;
 	}
 
 
@@ -100,9 +105,8 @@ long long int* pop_from_list(long long int* ptr){
 
 void *mymalloc(size_t size)
 {
-	int calcSize = getSize(size);
-
-	if (calcSize<9){
+	if (size > 4080){
+		int calcSize = getSize(size);
 		long long int * ptr = free_list[calcSize];
 		int size = pow(2, calcSize+4);
 		if (ptr==NULL){
@@ -119,9 +123,13 @@ void *mymalloc(size_t size)
 		}
 		return pop_from_list(ptr);
 	}
-
+	
 	else{
-
+		void* output = alloc_from_ram(size);
+		long long int* output2 = (long long int *) output;
+		*(output2) = size;
+		output2 ++;
+		return (void*) output2;
 	}
 
 	printf("mymalloc is not implemented\n");
