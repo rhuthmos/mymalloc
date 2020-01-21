@@ -11,11 +11,11 @@
 #include <fcntl.h>
 #include <assert.h>
 #include "memory.h"
-#include <math.h> 
+
 #define PAGE_SIZE 4096
 
 static long long int* free_list[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-
+static int sizeRef[] = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
 
 static void *alloc_from_ram(size_t size)
 {
@@ -36,9 +36,9 @@ static void free_ram(void *addr, size_t size)
 
 int getSize(int k){
 	int ans = -1;
-	for (int i = 4; i<=12; ++i){
-		if (k<=pow(2,i)){
-			ans = i-4;
+	for (int i = 0; i<=8; ++i){
+		if (k<=sizeRef[i]){
+			ans = i;
 			break;
 		}
 	}
@@ -74,7 +74,7 @@ void* pop_from_list(int i){
 		*(metadata+1) = *(metadata+1) -1;	// decrement available space
 		long long int * ptr = free_list[i];
 		
-		*((long long int*)*(free_list[i]+1)) = NULL;
+		*((long long int*)*(free_list[i]+1)) = 0L;
 		free_list[i] = (long long int*)*(free_list[i]+1);
 		return (void*)ptr;
 	}
@@ -87,15 +87,15 @@ void cleanup(int index, long long int* metaData){
 	}
 	
 	if (free_list[index] != NULL){
-		long long int* next = *(free_list[index]+1);
+		long long int* next =(long long int*) *(free_list[index]+1);
 		long long int* ptr = free_list[index];
 		while(next!= NULL){
 			if (next - ((long long int)next %4096) == metaData){
 				*(ptr+1) = *(next+1);
-				*(long long int*)*(next+1) = ptr;
+				*(long long int*)*(next+1) = (long long int)ptr;
 			}
 			ptr = next;
-			next = *(next + 1);
+			next = (long long int*)*(next + 1);
 			//prev = next;
 		}
 	}
@@ -104,9 +104,9 @@ void cleanup(int index, long long int* metaData){
 }
 
 void add_to_list(long long int* ptr, long long int * block){
-	*block = NULL;
-	*(block+1) = ptr;
-	*ptr = block;
+	*block = 0L;
+	*(block+1) = (long long int)ptr;
+	*ptr = (long long int)block;
 	long long int* metaData = ptr - ((long long int)ptr%4096)/8;
 	*(metaData+1) = *(metaData+1) + *(metaData);
 	if (*(metaData+1)>=4096){
@@ -141,7 +141,6 @@ void *mymalloc(size_t size)
 	if (size > 4080){
 		int calcSize = getSize(size);
 		long long int * ptr = free_list[calcSize];
-		int size = pow(2, calcSize+4);
 		if (ptr==NULL){
 			long long int* page = (long long int *) alloc_from_ram(4096);
 			long long int* endLimit = page + 4096;
