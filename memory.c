@@ -14,6 +14,9 @@
 #include <math.h> 
 #define PAGE_SIZE 4096
 
+static long long int* free_list[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+
+
 static void *alloc_from_ram(size_t size)
 {
 	assert((size % PAGE_SIZE) == 0 && "size must be multiples of 4096");
@@ -34,7 +37,7 @@ static void free_ram(void *addr, size_t size)
 int getSize(int k){
 	int ans = -1;
 	for (int i = 4; i<=12; ++i){
-		if (k<pow(2,i)){
+		if (k<=pow(2,i)){
 			ans = i-4;
 			break;
 		}
@@ -45,23 +48,25 @@ int getSize(int k){
 	return k;
 }
 
-void myfree(void *ptr)
-{
-	long long int* page = (long long int*) ptr;
-	page = page - ((long long int) page %4096);
-	int size = *(page);
-	if (size<=4080){
-		int sz = getSize(size);
-		long long int* list = free_list[sz];
-		add_to_list(list, (long long int*) ptr);
+int getSize_large(int k){
+	int i = 1;
+	while (4096*i < k){
+		i++;
 	}
-	else{
-		free_ram((void*) page, size);
-	}
-	printf("myfree is not implemented\n");
-	abort();
+	return 4096*i;
 }
 
+
+void* pop_from_list(long long int* ptr){
+	if (ptr!=NULL){
+		long long int* metadata = ptr - ((long long int)ptr)/8;
+		*(metadata+1) = *(metadata+1) -1;	// decrement available space
+		*((long long int*)*(ptr+1)) = NULL;
+		return (void*)ptr;
+	}
+
+
+}
 void cleanup(long long int * ptr, long long int* metaData){
 	while (ptr != NULL && (ptr -((long long int )ptr % 4096) == metaData)){
 		pop_from_list(ptr);
@@ -92,16 +97,24 @@ void add_to_list(long long int* ptr, long long int * block){
 }
 
 
-void* pop_from_list(long long int* ptr){
-	if (ptr!=NULL){
-		long long int* metadata = ptr - ((long long int)ptr)/8;
-		*(metadata+1) = *(metadata+1) -1;
-		*((long long int*)*(ptr+1)) = NULL;
-		return (void*)ptr;
+void myfree(void *ptr)
+{
+	long long int* page = (long long int*) ptr;
+	page = page - ((long long int) page %4096);
+	int size = *(page);
+	if (size<=4080){
+		int sz = getSize(size);
+		long long int* list = free_list[sz];
+		add_to_list(list, (long long int*) ptr);
 	}
-
-
+	else{
+		free_ram((void*) page, size);
+	}/* 
+	printf("myfree is not implemented\n");
+	abort(); */
 }
+
+
 
 void *mymalloc(size_t size)
 {
@@ -125,6 +138,7 @@ void *mymalloc(size_t size)
 	}
 	
 	else{
+		int size = getSize_large(size+8);
 		void* output = alloc_from_ram(size);
 		long long int* output2 = (long long int *) output;
 		*(output2) = size;
@@ -132,7 +146,7 @@ void *mymalloc(size_t size)
 		return (void*) output2;
 	}
 
-	printf("mymalloc is not implemented\n");
+	/* printf("mymalloc is not implemented\n");
 	abort();
-	return NULL;
+	return NULL; */
 }
