@@ -56,7 +56,7 @@ int getSize_large(int k){
 	return 4096*i;
 }
 
-
+/* 
 void* pop_from_list(long long int* ptr){
 	if (ptr!=NULL){
 		long long int* metadata = ptr - ((long long int)ptr)/8;
@@ -66,21 +66,40 @@ void* pop_from_list(long long int* ptr){
 	}
 
 
+} */
+
+void* pop_from_list(int i){
+	if (free_list[i]!=NULL){
+		long long int* metadata = free_list[i] - ((long long int)free_list[i])/8;
+		*(metadata+1) = *(metadata+1) -1;	// decrement available space
+		long long int * ptr = free_list[i];
+		
+		*((long long int*)*(free_list[i]+1)) = NULL;
+		free_list[i] = (long long int*)*(free_list[i]+1);
+		return (void*)ptr;
+	}
+
+
 }
-void cleanup(long long int * ptr, long long int* metaData){
-	while (ptr != NULL && (ptr -((long long int )ptr % 4096) == metaData)){
-		pop_from_list(ptr);
+void cleanup(int index, long long int* metaData){
+	while (free_list[index] != NULL && (free_list[index] -((long long int )free_list[index] % 4096) == metaData)){
+		pop_from_list(index);
 	}
-	long long int* next = *(ptr+1);
-	while(next!= NULL){
-		if (next - ((long long int)next %4096) == metaData){
-			*(ptr+1) = *(next+1);
-			*(long long int*)*(next+1) = ptr;
+	
+	if (free_list[index] != NULL){
+		long long int* next = *(free_list[index]+1);
+		long long int* ptr = free_list[index];
+		while(next!= NULL){
+			if (next - ((long long int)next %4096) == metaData){
+				*(ptr+1) = *(next+1);
+				*(long long int*)*(next+1) = ptr;
+			}
+			ptr = next;
+			next = *(next + 1);
+			//prev = next;
 		}
-		ptr = next;
-		next = *(next + 1);
-		//prev = next;
 	}
+	
 	free_ram(metaData, 4096);
 }
 
@@ -91,7 +110,8 @@ void add_to_list(long long int* ptr, long long int * block){
 	long long int* metaData = ptr - ((long long int)ptr%4096)/8;
 	*(metaData+1) = *(metaData+1) + *(metaData);
 	if (*(metaData+1)>=4096){
-		cleanup(ptr, metaData);
+		int calcSize = getSize(*metaData);
+		cleanup(calcSize, metaData);
 	}
 	ptr = block;
 }
@@ -134,7 +154,7 @@ void *mymalloc(size_t size)
 				page += (size/8);
 			}
 		}
-		return pop_from_list(ptr);
+		return pop_from_list(calcSize);
 	}
 	
 	else{
