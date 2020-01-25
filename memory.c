@@ -48,7 +48,7 @@ size_t getSize(size_t k){
 	return k;
 }
 
-size_t getSize_large(int k){
+size_t getSize_large(size_t k){
 	size_t i = 1L;
 	while (4096*i < k){
 		i++;
@@ -112,7 +112,7 @@ void cleanup(int index, size_t* metaData){
 }
 
 void add_to_list(int sz, size_t* block){
-	printf("Block : %ld\n", (size_t)block);
+	//printf("Block : %ld\n", (size_t)block);
 	size_t* ptr = free_list[sz];
 	*block = 0L;	
 	if (ptr != NULL){
@@ -199,10 +199,10 @@ void *mymalloc(size_t size)
 	}
 	
 	else{
-		int size = getSize_large(size+16);
-		void* output = alloc_from_ram(size);
+		size_t size2 = getSize_large(size+16);
+		void* output = alloc_from_ram(size2);
 		size_t* output2 = (size_t *) output;
-		*(output2) = size;
+		*(output2) = size2;
 		output2 +=2;
 		return (void*) output2;
 	}
