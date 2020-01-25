@@ -64,9 +64,7 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < num_nodes; i++)
 	{
-		struct node* a = allocate_n(i);
-		//printf("Nodes[i] = %ld\n", (size_t)nodes[i]);
-		nodes[i] = a;
+		nodes[i] = allocate_n(i);
 	}
 
 	for (int i = 0; i < num_replacements; i++)
